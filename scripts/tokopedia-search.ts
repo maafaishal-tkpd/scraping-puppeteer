@@ -11,9 +11,12 @@ import fs from "fs-extra";
     waitUntil: "networkidle2",
   });
 
+  await autoScroll(page);
+
   const productHandles = await page.$$(".prd_container-card");
 
   const items = [];
+  let errorTotal = 0
 
   for (const product of productHandles) {
     let title = null;
@@ -29,7 +32,7 @@ import fs from "fs-extra";
         product
       );
     } catch (error) {
-      console.error(error);
+      errorTotal += 1
     }
 
     try {
@@ -39,7 +42,7 @@ import fs from "fs-extra";
         product
       );
     } catch (error) {
-      console.error(error);
+      errorTotal += 1
     }
 
     try {
@@ -51,7 +54,7 @@ import fs from "fs-extra";
         product
       );
     } catch (error) {
-      console.error(error);
+      errorTotal += 1
     }
 
     try {
@@ -60,7 +63,7 @@ import fs from "fs-extra";
         product
       );
     } catch (error) {
-      console.error(error);
+      errorTotal += 1
     }
 
     try {
@@ -69,7 +72,7 @@ import fs from "fs-extra";
         product
       );
     } catch (error) {
-      console.error(error);
+      errorTotal += 1
     }
     try {
       shopName = await page.evaluate(
@@ -77,15 +80,35 @@ import fs from "fs-extra";
         product
       );
     } catch (error) {
-      console.error(error);
+      errorTotal += 1
     }
-
+    
     if (title) {
       items.push({ title, shopName, price, img, star, sold });
     }
   }
-
+  
+  console.log('=+= LOG - errorTotal', errorTotal);
   fs.outputFileSync("results/tokopedia-search.json", JSON.stringify(items));
 
   await browser.close();
 })();
+
+async function autoScroll(page: puppeteer.Page){
+  await page.evaluate(async () => {
+      await new Promise((resolve) => {
+          let totalHeight = 0;
+          const distance = 100;
+          const timer = setInterval(() => {
+              const scrollHeight = document.body.scrollHeight;
+              window.scrollBy(0, distance);
+              totalHeight += distance;
+
+              if(totalHeight >= scrollHeight - window.innerHeight){
+                  clearInterval(timer);
+                  resolve(true);
+              }
+          }, 10);
+      });
+  });
+}
